@@ -15,16 +15,18 @@
   <button onclick="diceGame()">🎲 Dice</button>
   <button onclick="slotGame()">🎰 Slots</button>
   <button onclick="blackjack()">🃏 Blackjack</button>
-  <button onclick="openRoulette()">🎡 Roulette</button>
+  <button onclick="toggleRoulette()">🎡 Roulette</button>
 </div>
 
-<div id="roulette-area" class="hidden">
+<div class="bet-controls">
+  <input id="betAmount" type="number" placeholder="Bet Amount">
+</div>
+
+<!-- Roulette -->
+<div id="roulette" class="hidden">
   <div id="wheel"></div>
-  <div class="roulette-controls">
-    <input id="roulette-bet" type="number" placeholder="Bet Amount">
-    <input id="roulette-choice" placeholder="red / black / 0-36">
-    <button onclick="playRoulette()">SPIN</button>
-  </div>
+  <input id="rouletteChoice" placeholder="red / black / 0-36">
+  <button onclick="playRoulette()">SPIN</button>
 </div>
 
 <div id="output"></div>

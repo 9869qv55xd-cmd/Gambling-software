@@ -7,253 +7,29 @@
 
 <style>
 body {
-  font-family: Arial, sans-serif;
-  text-align: center;
-  transition: 0.3s;
+  margin:0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: radial-gradient(circle at top, #222, #000);
+  color:#eee;
+  text-align:center;
 }
-.dark { background:#111; color:#fff; }
-.light { background:#f5f5f5; color:#111; }
+
+h1 {
+  padding:20px;
+  margin:0;
+  background:linear-gradient(#111,#000);
+  border-bottom:2px solid gold;
+}
+
+.panel {
+  max-width:900px;
+  margin:20px auto;
+  padding:20px;
+  background:linear-gradient(#1a1a1a,#0b0b0b);
+  border:1px solid #333;
+  border-radius:12px;
+  box-shadow:0 0 25px rgba(0,0,0,0.7);
+}
 
 button {
-  padding:10px;
-  margin:4px;
-  cursor:pointer;
-}
-button:focus { outline:3px solid gold; }
-
-.hidden { display:none; }
-
-#players p { margin:4px; }
-#output { margin-top:15px; font-size:18px; }
-#stats { margin-top:10px; font-size:14px; }
-
-#wheel {
-  width:140px;
-  height:140px;
-  margin:15px auto;
-  border-radius:50%;
-  border:6px solid gold;
-  background:conic-gradient(red 0 120deg, black 120deg 240deg, green 240deg 360deg);
-  transition:transform 3s ease-out;
-}
-
-#rouletteGrid {
-  display:grid;
-  grid-template-columns:repeat(6,1fr);
-  gap:5px;
-  margin:10px;
-}
-
-.red { background:#900; color:white; }
-.black { background:#000; color:white; }
-.green { background:#060; color:white; }
-
-@media(max-width:600px){
-  button{width:90%}
-}
-</style>
-</head>
-
-<body class="dark">
-
-<h1>🎰 Ultimate Virtual Casino</h1>
-<button onclick="toggleTheme()">🌓 Theme</button>
-
-<div id="players"></div>
-
-<h3>💰 Chips</h3>
-<div>
-  <button onclick="addBet(5)">5</button>
-  <button onclick="addBet(10)">10</button>
-  <button onclick="addBet(25)">25</button>
-  <button onclick="addBet(50)">50</button>
-  <button onclick="clearBet()">Clear</button>
-</div>
-
-<p>Current Bet: <b><span id="bet">0</span></b></p>
-
-<h3>🎮 Games</h3>
-<div>
-  <button onclick="Games.Dice()">Dice</button>
-  <button onclick="Games.Slots()">Slots</button>
-  <button onclick="Games.Blackjack()">Blackjack</button>
-  <button onclick="toggleRoulette()">Roulette</button>
-  <button onclick="Games.Crash()">Crash</button>
-  <button onclick="Games.CoinFlip()">Coin Flip</button>
-  <button onclick="Games.HighLow()">High / Low</button>
-</div>
-
-<div id="rouletteArea" class="hidden">
-  <div id="wheel"></div>
-  <div id="rouletteGrid"></div>
-</div>
-
-<div id="output"></div>
-<div id="stats"></div>
-
-<script>
-/* ===== ENGINE CONFIG ===== */
-const CONFIG = {
-  startBalance: 100,
-  houseEdge: 0.05
-};
-
-/* ===== CORE STATE ===== */
-let players = [
-  { name:"Player 1", bal:CONFIG.startBalance },
-  { name:"Player 2", bal:CONFIG.startBalance }
-];
-let turn = 0;
-let bet = 0;
-let jackpot = 500;
-let theme = "dark";
-let spinning = false;
-
-let stats = { games:0, wins:0, losses:0, streak:0 };
-let achievements = new Set();
-
-/* ===== ENGINE ===== */
-const Games = {};
-function registerGame(name, fn){ Games[name]=fn; }
-
-function rng(){ return Math.random(); }
-
-function ui(){
-  document.getElementById("players").innerHTML =
-    players.map((p,i)=>`<p ${i===turn?"style=color:gold":""}>
-      ${p.name}: 💰 ${p.bal}
-    </p>`).join("");
-
-  document.getElementById("bet").innerText = bet;
-  document.getElementById("stats").innerText =
-    `Games:${stats.games} Wins:${stats.wins} Losses:${stats.losses} Streak:${stats.streak} Jackpot:${jackpot}`;
-}
-
-function addBet(v){ bet+=v; ui(); }
-function clearBet(){ bet=0; ui(); }
-
-function canBet(){
-  return bet>0 && players[turn].bal>=bet;
-}
-
-function win(amount){
-  stats.games++; stats.wins++; stats.streak++;
-  players[turn].bal += Math.floor(amount*(1-CONFIG.houseEdge));
-}
-
-function lose(amount){
-  stats.games++; stats.losses++; stats.streak=0;
-  players[turn].bal -= amount;
-}
-
-function endTurn(){
-  if(players[turn].bal<=0){
-    alert(players[turn].name+" went bankrupt! Restarting.");
-    location.reload();
-  }
-  bet=0;
-  turn=(turn+1)%players.length;
-  ui();
-}
-
-function output(msg){
-  document.getElementById("output").innerText = msg;
-}
-
-/* ===== GAMES ===== */
-registerGame("Dice", ()=>{
-  if(!canBet())return;
-  rng()>0.5 ? win(bet) : lose(bet);
-  output("🎲 Dice rolled");
-  endTurn();
-});
-
-registerGame("Slots", ()=>{
-  if(!canBet())return;
-  jackpot += Math.floor(bet*0.1);
-  if(rng()>0.85){
-    win(jackpot);
-    achievements.add("💰 Jackpot Winner");
-    output("🎰 JACKPOT!");
-    jackpot=500;
-  } else {
-    lose(bet);
-    output("🎰 Slots lost");
-  }
-  endTurn();
-});
-
-registerGame("Blackjack", ()=>{
-  if(!canBet())return;
-  let p=16+rng()*6, d=15+rng()*8;
-  p<=21 && p>d ? win(bet) : lose(bet);
-  output("🃏 Blackjack");
-  endTurn();
-});
-
-registerGame("Crash", ()=>{
-  if(!canBet())return;
-  let m=1+rng()*5;
-  m>2 ? win(bet*m) : lose(bet);
-  output("📈 Crash");
-  endTurn();
-});
-
-registerGame("CoinFlip", ()=>{
-  if(!canBet())return;
-  rng()>0.5 ? win(bet) : lose(bet);
-  output("🪙 Coin Flip");
-  endTurn();
-});
-
-registerGame("HighLow", ()=>{
-  if(!canBet())return;
-  let n=Math.floor(rng()*13)+1;
-  n>7 ? win(bet) : lose(bet);
-  output("⬆️⬇️ High / Low");
-  endTurn();
-});
-
-/* ===== ROULETTE ===== */
-function toggleRoulette(){
-  document.getElementById("rouletteArea").classList.toggle("hidden");
-}
-
-function buildRoulette(){
-  let g=document.getElementById("rouletteGrid");
-  for(let i=0;i<=36;i++){
-    let b=document.createElement("button");
-    b.innerText=i;
-    b.className=i===0?"green":i%2===0?"black":"red";
-    b.onclick=()=>playRoulette(i);
-    g.appendChild(b);
-  }
-}
-buildRoulette();
-
-function playRoulette(choice){
-  if(!canBet()||spinning)return;
-  spinning=true;
-  document.getElementById("wheel").style.transform =
-    `rotate(${rng()*360+720}deg)`;
-
-  setTimeout(()=>{
-    let n=Math.floor(rng()*37);
-    n===choice ? win(bet*35) : lose(bet);
-    output("🎡 Roulette: "+n);
-    spinning=false;
-    endTurn();
-  },3000);
-}
-
-/* ===== THEME ===== */
-function toggleTheme(){
-  theme=theme==="dark"?"light":"dark";
-  document.body.className=theme;
-}
-
-ui();
-</script>
-
-</body>
-</html>
+  padding:10px 1

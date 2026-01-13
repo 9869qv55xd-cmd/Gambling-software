@@ -6,19 +6,29 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>🎰 Virtual Gambling Game</h1>
 
-  <div id="players"></div>
+<h1>🎰 Virtual Gambling Game</h1>
 
-  <div class="menu">
-    <button onclick="diceGame()">🎲 Dice</button>
-    <button onclick="slotGame()">🎰 Slots</button>
-    <button onclick="blackjack()">🃏 Blackjack</button>
-    <button onclick="roulette()">🎡 Roulette</button>
+<div id="players"></div>
+
+<div class="menu">
+  <button onclick="diceGame()">🎲 Dice</button>
+  <button onclick="slotGame()">🎰 Slots</button>
+  <button onclick="blackjack()">🃏 Blackjack</button>
+  <button onclick="openRoulette()">🎡 Roulette</button>
+</div>
+
+<div id="roulette-area" class="hidden">
+  <div id="wheel"></div>
+  <div class="roulette-controls">
+    <input id="roulette-bet" type="number" placeholder="Bet Amount">
+    <input id="roulette-choice" placeholder="red / black / 0-36">
+    <button onclick="playRoulette()">SPIN</button>
   </div>
+</div>
 
-  <div id="output"></div>
+<div id="output"></div>
 
-  <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>

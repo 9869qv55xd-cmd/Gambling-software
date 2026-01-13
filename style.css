@@ -21,3 +21,28 @@ body {
   font-size: 18px;
   white-space: pre-line;
 }
+
+.hidden {
+  display: none;
+}
+
+/* 🎡 Roulette Animation */
+#wheel {
+  width: 150px;
+  height: 150px;
+  margin: 20px auto;
+  border-radius: 50%;
+  border: 8px solid gold;
+  background: conic-gradient(
+    red 0deg 120deg,
+    black 120deg 240deg,
+    green 240deg 360deg
+  );
+  transition: transform 3s ease-out;
+}
+
+.roulette-controls input {
+  padding: 8px;
+  margin: 5px;
+  width: 120px;
+}

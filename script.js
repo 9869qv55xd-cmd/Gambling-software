@@ -1,12 +1,12 @@
-// Local Multiplayer Players
 let players = [
   { name: "Player 1", balance: 100 },
   { name: "Player 2", balance: 100 }
 ];
 
 let currentPlayer = 0;
+let spinning = false;
 
-// Render Players
+// ---------- Helpers ----------
 function renderPlayers() {
   document.getElementById("players").innerHTML =
     players.map((p, i) =>
@@ -16,23 +16,26 @@ function renderPlayers() {
     ).join("");
 }
 
-// Switch Player Turn
-function switchPlayer() {
-  currentPlayer = (currentPlayer + 1) % players.length;
-  renderPlayers();
-}
-
-// Output helper
 function output(text) {
   document.getElementById("output").innerText = text;
   renderPlayers();
 }
 
-// 🎲 Dice Game
+function switchPlayer() {
+  currentPlayer = (currentPlayer + 1) % players.length;
+  renderPlayers();
+}
+
+function canBet(amount) {
+  return amount > 0 && players[currentPlayer].balance >= amount;
+}
+
+// ---------- Dice ----------
 function diceGame() {
   const bet = 10;
-  const roll = Math.floor(Math.random() * 6) + 1;
+  if (!canBet(bet)) return output("❌ Not enough balance");
 
+  const roll = Math.floor(Math.random() * 6) + 1;
   if (roll >= 4) {
     players[currentPlayer].balance += bet;
     output(`🎲 Rolled ${roll} — WON ${bet}`);
@@ -40,12 +43,14 @@ function diceGame() {
     players[currentPlayer].balance -= bet;
     output(`🎲 Rolled ${roll} — LOST ${bet}`);
   }
-
   switchPlayer();
 }
 
-// 🎰 Slot Machine
+// ---------- Slots ----------
 function slotGame() {
+  const bet = 10;
+  if (!canBet(bet)) return output("❌ Not enough balance");
+
   const symbols = ["🍒", "🍋", "⭐", "🔔"];
   const spin = [
     symbols[rand()],
@@ -57,10 +62,9 @@ function slotGame() {
     players[currentPlayer].balance += 30;
     output(`🎰 ${spin.join(" ")} — JACKPOT! +30`);
   } else {
-    players[currentPlayer].balance -= 10;
-    output(`🎰 ${spin.join(" ")} — Lost 10`);
+    players[currentPlayer].balance -= bet;
+    output(`🎰 ${spin.join(" ")} — LOST ${bet}`);
   }
-
   switchPlayer();
 }
 
@@ -68,50 +72,74 @@ function rand() {
   return Math.floor(Math.random() * 4);
 }
 
-// 🃏 Blackjack (Simplified)
+// ---------- Blackjack ----------
 function blackjack() {
+  const bet = 20;
+  if (!canBet(bet)) return output("❌ Not enough balance");
+
   const player = Math.floor(Math.random() * 11) + 16;
   const dealer = Math.floor(Math.random() * 11) + 16;
 
   if (player > 21 || (dealer <= 21 && dealer >= player)) {
-    players[currentPlayer].balance -= 20;
-    output(`🃏 You: ${player} | Dealer: ${dealer}\nLOST 20`);
+    players[currentPlayer].balance -= bet;
+    output(`🃏 You: ${player} | Dealer: ${dealer}\nLOST ${bet}`);
   } else {
-    players[currentPlayer].balance += 20;
-    output(`🃏 You: ${player} | Dealer: ${dealer}\nWON 20`);
+    players[currentPlayer].balance += bet;
+    output(`🃏 You: ${player} | Dealer: ${dealer}\nWON ${bet}`);
   }
-
   switchPlayer();
 }
 
-// 🎡 Roulette (European)
-function roulette() {
-  const betAmount = 20;
-  const number = Math.floor(Math.random() * 37); // 0–36
-  const color = getColor(number);
-
-  const bets = ["red", "black", "green"];
-  const chosenBet = bets[Math.floor(Math.random() * bets.length)];
-
-  let text = `🎡 Roulette Spin\nNumber: ${number} (${color})\nBet: ${chosenBet}\n`;
-
-  if (chosenBet === color) {
-    const win = color === "green" ? betAmount * 14 : betAmount * 2;
-    players[currentPlayer].balance += win;
-    text += `WON ${win}`;
-  } else {
-    players[currentPlayer].balance -= betAmount;
-    text += `LOST ${betAmount}`;
-  }
-
-  output(text);
-  switchPlayer();
+// ---------- Roulette ----------
+function openRoulette() {
+  document.getElementById("roulette-area").classList.remove("hidden");
 }
 
-function getColor(number) {
-  if (number === 0) return "green";
-  return number % 2 === 0 ? "black" : "red";
+function playRoulette() {
+  if (spinning) return;
+  const bet = parseInt(document.getElementById("roulette-bet").value);
+  let choice = document.getElementById("roulette-choice").value.toLowerCase();
+
+  if (!canBet(bet)) return output("❌ Invalid bet");
+
+  spinning = true;
+  const wheel = document.getElementById("wheel");
+  const spinDeg = Math.floor(Math.random() * 360) + 720;
+  wheel.style.transform = `rotate(${spinDeg}deg)`;
+
+  setTimeout(() => {
+    const number = Math.floor(Math.random() * 37);
+    const color = getColor(number);
+
+    let win = false;
+    let payout = bet;
+
+    if (choice === color) {
+      payout = color === "green" ? bet * 14 : bet * 2;
+      win = true;
+    }
+
+    if (choice == number) {
+      payout = bet * 35;
+      win = true;
+    }
+
+    if (win) {
+      players[currentPlayer].balance += payout;
+      output(`🎡 ${number} (${color}) — WON ${payout}`);
+    } else {
+      players[currentPlayer].balance -= bet;
+      output(`🎡 ${number} (${color}) — LOST ${bet}`);
+    }
+
+    spinning = false;
+    switchPlayer();
+  }, 3000);
 }
 
-// Initial render
+function getColor(num) {
+  if (num === 0) return "green";
+  return num % 2 === 0 ? "black" : "red";
+}
+
 renderPlayers();

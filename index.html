@@ -6,30 +6,231 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body {
+body{
   margin:0;
-  font-family: "Segoe UI", Arial, sans-serif;
-  background: radial-gradient(circle at top, #222, #000);
+  font-family:Segoe UI,Arial,sans-serif;
+  background:radial-gradient(circle at top,#222,#000);
   color:#eee;
   text-align:center;
 }
+.hidden{display:none}
+h1{margin:0;padding:18px;border-bottom:2px solid gold}
 
-h1 {
-  padding:20px;
-  margin:0;
-  background:linear-gradient(#111,#000);
-  border-bottom:2px solid gold;
-}
-
-.panel {
-  max-width:900px;
-  margin:20px auto;
-  padding:20px;
-  background:linear-gradient(#1a1a1a,#0b0b0b);
-  border:1px solid #333;
+.panel{
+  max-width:950px;
+  margin:16px auto;
+  padding:16px;
+  background:#111;
   border-radius:12px;
-  box-shadow:0 0 25px rgba(0,0,0,0.7);
+  border:1px solid #333;
+}
+button{
+  padding:10px 16px;
+  margin:4px;
+  border-radius:8px;
+  border:1px solid #444;
+  background:#222;
+  color:#fff;
+  cursor:pointer;
+}
+button:hover{border-color:gold}
+button:disabled{opacity:.4;cursor:not-allowed}
+.gold{color:gold}
+.red{background:#8b0000}
+.black{background:#000}
+.green{background:#006400}
+.admin{border:2px solid red;color:red}
+
+#players p{margin:4px;font-size:18px}
+#bet{font-size:22px;color:gold}
+#output{font-size:20px;margin-top:10px}
+
+#wheel{
+  width:180px;height:180px;margin:14px auto;border-radius:50%;
+  border:8px solid gold;
+  background:conic-gradient(green 0deg 10deg,red 10deg 190deg,black 190deg 360deg);
+  transition:transform 3s cubic-bezier(.2,.8,.2,1);
+}
+#rouletteTable{
+  display:grid;
+  grid-template-columns:repeat(12,1fr);
+  gap:4px;margin-top:12px;
+}
+.cell{padding:10px;border-radius:6px;font-weight:bold;cursor:pointer}
+
+#lockScreen{
+  height:100vh;display:flex;align-items:center;justify-content:center;
+}
+#lockBox{
+  background:#111;padding:30px;border-radius:12px;border:1px solid gold;
+}
+input{padding:10px;font-size:18px;width:140px;text-align:center}
+#error{color:red;margin-top:10px}
+</style>
+</head>
+
+<body>
+
+<!-- 🔐 LOCK SCREEN -->
+<div id="lockScreen">
+  <div id="lockBox">
+    <h2 class="gold">🔐 Enter Access Code</h2>
+    <input type="password" id="code" placeholder="****"><br><br>
+    <button onclick="unlock()">ENTER</button>
+    <div id="error"></div>
+  </div>
+</div>
+
+<!-- 🎰 CASINO -->
+<div id="casino" class="hidden">
+
+<h1>🎰 Ultimate Virtual Casino <span id="adminBadge" class="hidden admin">ADMIN MODE</span></h1>
+
+<div class="panel">
+  <div id="players"></div>
+  <p>Current Bet: <span id="bet">0</span></p>
+  <div>
+    <button onclick="addBet(5)">5</button>
+    <button onclick="addBet(10)">10</button>
+    <button onclick="addBet(25)">25</button>
+    <button onclick="addBet(50)">50</button>
+    <button onclick="clearBet()">Clear</button>
+  </div>
+</div>
+
+<div class="panel">
+  <button onclick="dice()">🎲 Dice</button>
+  <button onclick="slots()">🎰 Slots</button>
+  <button onclick="blackjack()">🃏 Blackjack</button>
+  <button onclick="toggleRoulette()">🎡 Roulette</button>
+</div>
+
+<div class="panel hidden" id="roulettePanel">
+  <div id="wheel"></div>
+  <div>
+    <button class="red" onclick="betColor('red')">RED</button>
+    <button class="black" onclick="betColor('black')">BLACK</button>
+    <button class="green" onclick="betNumber(0)">0</button>
+  </div>
+  <div id="rouletteTable"></div>
+</div>
+
+<!-- 🛠️ ADMIN PANEL -->
+<div class="panel hidden admin" id="adminPanel">
+  <h3>🛠️ Admin Controls</h3>
+  <button onclick="adminAddMoney(100)">+100 Current Player</button>
+  <button onclick="adminAddMoneyAll(100)">+100 All Players</button>
+  <button onclick="adminSkip()">Skip Turn</button>
+  <button onclick="adminReset()">Restart Game</button>
+</div>
+
+<div class="panel">
+  <div id="output"></div>
+</div>
+
+</div>
+
+<script>
+/* 🔐 CODES */
+const PLAYER_CODE="8733";
+const ADMIN_CODE="0927";
+let isAdmin=false;
+
+/* UNLOCK */
+function unlock(){
+  const c=document.getElementById("code").value;
+  if(c===PLAYER_CODE||c===ADMIN_CODE){
+    isAdmin=(c===ADMIN_CODE);
+    document.getElementById("lockScreen").classList.add("hidden");
+    document.getElementById("casino").classList.remove("hidden");
+    if(isAdmin){
+      document.getElementById("adminPanel").classList.remove("hidden");
+      document.getElementById("adminBadge").classList.remove("hidden");
+    }
+  }else{
+    document.getElementById("error").innerText="❌ Invalid code";
+  }
 }
 
-button {
-  padding:10px 1
+/* GAME STATE */
+let players=[{name:"Player 1",bal:100},{name:"Player 2",bal:100}];
+let turn=0,bet=0,spinning=false;
+const redNums=[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+
+function ui(){
+  document.getElementById("players").innerHTML=
+    players.map((p,i)=>`<p ${i===turn?'class="gold"':''}>${p.name}: 💰${p.bal}</p>`).join("");
+  document.getElementById("bet").innerText=bet;
+}
+ui();
+
+function addBet(v){if(spinning)return;bet+=v;ui();}
+function clearBet(){if(spinning)return;bet=0;ui();}
+function canBet(){return bet>0&&players[turn].bal>=bet}
+
+function win(x){players[turn].bal+=Math.floor(x*.95);}
+function lose(x){players[turn].bal-=x;}
+
+function endTurn(){
+  if(players[turn].bal<=0){
+    alert(players[turn].name+" bankrupt! Restarting.");
+    location.reload();
+  }
+  bet=0;turn=(turn+1)%players.length;ui();
+}
+
+function output(t){document.getElementById("output").innerText=t}
+
+/* GAMES */
+function dice(){if(!canBet())return;Math.random()>.5?win(bet):lose(bet);output("🎲 Dice");endTurn();}
+function slots(){if(!canBet())return;Math.random()>.85?win(bet*10):lose(bet);output("🎰 Slots");endTurn();}
+function blackjack(){if(!canBet())return;let p=16+Math.random()*6,d=15+Math.random()*8;p<=21&&p>d?win(bet):lose(bet);output("🃏 Blackjack");endTurn();}
+
+/* ROULETTE */
+function toggleRoulette(){document.getElementById("roulettePanel").classList.toggle("hidden")}
+function betNumber(n){spin(n,"number")}
+function betColor(c){spin(c,"color")}
+
+function spin(choice,type){
+  if(!canBet()||spinning)return;
+  spinning=true;
+  document.querySelectorAll("button").forEach(b=>b.disabled=true);
+  document.getElementById("wheel").style.transform=`rotate(${Math.random()*360+720}deg)`;
+
+  setTimeout(()=>{
+    let n=Math.floor(Math.random()*37);
+    let winCond=false;
+    if(type==="number"&&n===choice)winCond=true;
+    if(type==="color"){
+      if(choice==="red"&&redNums.includes(n))winCond=true;
+      if(choice==="black"&&n!==0&&!redNums.includes(n))winCond=true;
+    }
+    winCond?win(type==="number"?bet*14:bet*2):lose(bet);
+    output("🎡 Roulette: "+n);
+    spinning=false;
+    document.querySelectorAll("button").forEach(b=>b.disabled=false);
+    endTurn();
+  },3000);
+}
+
+/* ADMIN CONTROLS */
+function adminAddMoney(x){players[turn].bal+=x;ui();}
+function adminAddMoneyAll(x){players.forEach(p=>p.bal+=x);ui();}
+function adminSkip(){endTurn();}
+function adminReset(){location.reload();}
+
+/* BUILD TABLE */
+(function(){
+  const t=document.getElementById("rouletteTable");
+  for(let i=1;i<=36;i++){
+    let d=document.createElement("div");
+    d.className="cell "+(redNums.includes(i)?"red":"black");
+    d.innerText=i;
+    d.onclick=()=>betNumber(i);
+    t.appendChild(d);
+  }
+})();
+</script>
+
+</body>
+</html>

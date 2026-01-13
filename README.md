@@ -1,24 +1,20 @@
 # 🎰 Virtual Gambling Software
 
-A browser-based gambling game written in JavaScript.
+Browser-based gambling game using JavaScript.
 
 ## ⚠️ Disclaimer
-Educational use only.  
-No real money. No persistence.  
-Safe for GitHub.
+Educational only.
+No real money.
+No data saving.
 
-## 🎮 Games
+## 🎮 Features
 - Dice
-- Slot Machine
+- Slots
 - Blackjack
-- Roulette
+- Animated Roulette
+- Player betting
+- Balance protection
 - Local multiplayer
 
-## 🚀 How to Run
-Open `index.html` in your browser.
-
-## 🛠️ Ideas
-- Betting UI
-- Animations
-- Online multiplayer
-- Mobile support
+## 🚀 Run
+Open `index.html`

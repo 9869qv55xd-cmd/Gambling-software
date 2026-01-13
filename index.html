@@ -4,42 +4,41 @@
 <meta charset="UTF-8">
 <title>Ultimate Virtual Casino</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-:root{--gold:#d4af37;--panel:#111;--red:#8b0000;--green:#006400}
+:root{--gold:#d4af37;--panel:#111}
 *{box-sizing:border-box}
 body{
   margin:0;font-family:Segoe UI,Arial;
   background:radial-gradient(circle at top,#222,#000);
-  color:#eee;text-align:center;
+  color:#eee;text-align:center
 }
-.hidden{display:none}
-button{
-  padding:10px 16px;margin:4px;border-radius:8px;
-  border:1px solid #444;background:#222;color:#fff;cursor:pointer
-}
-button:hover{border-color:var(--gold)}
-input{
-  padding:10px;font-size:16px;
+button,input{
+  padding:10px 14px;margin:6px;font-size:16px;
   background:#000;color:#fff;
-  border-radius:6px;border:1px solid #444
+  border:1px solid #444;border-radius:6px
 }
+button{cursor:pointer}
+button:hover{border-color:var(--gold)}
 .panel{
   max-width:1100px;margin:14px auto;padding:16px;
   background:var(--panel);border-radius:12px;border:1px solid #333
 }
+.hidden{display:none!important}
 .gold{color:var(--gold)}
 .red{background:#8b0000}
 .black{background:#000}
 .green{background:#006400}
 .admin{border:2px solid red;color:red;padding:4px 10px;border-radius:6px}
-#lock,#lobby{
-  height:100vh;display:flex;align-items:center;justify-content:center
+
+#lock{
+  height:100vh;display:flex;
+  align-items:center;justify-content:center
 }
 .box{
   background:#111;padding:30px;border-radius:14px;
   border:1px solid var(--gold);max-width:420px;width:100%
 }
-#error{color:red;margin-top:10px}
 #wheel{
   width:220px;height:220px;margin:14px auto;
   border-radius:50%;border:10px solid var(--gold);
@@ -51,36 +50,37 @@ input{
   gap:4px;margin-top:14px
 }
 .cell{padding:10px;border-radius:6px;font-weight:bold;cursor:pointer}
+#error{color:red}
 </style>
 </head>
 
 <body>
 
-<!-- 🔐 LOCK -->
+<!-- 🔐 LOCK SCREEN (ONLY THING VISIBLE INITIALLY) -->
 <div id="lock">
   <div class="box">
     <h2 class="gold">🔐 Casino Access</h2>
-    <input id="code" type="password" placeholder="Access code">
-    <br><br>
+    <input id="code" type="password" placeholder="Enter access code">
+    <br>
     <button onclick="unlock()">ENTER</button>
     <div id="error"></div>
   </div>
 </div>
 
-<!-- 👥 LOBBY -->
+<!-- 👥 LOBBY (HIDDEN) -->
 <div id="lobby" class="hidden">
   <div class="box">
     <h2 class="gold">👥 Player Lobby</h2>
     <input id="playerName" placeholder="Player name">
-    <br><br>
+    <br>
     <button onclick="addPlayer()">Add Player</button>
     <div id="playerList"></div>
     <br>
-    <button onclick="startGame()">🎰 Start Game</button>
+    <button onclick="startGame()">Start Game</button>
   </div>
 </div>
 
-<!-- 🎰 CASINO -->
+<!-- 🎰 CASINO (COMPLETELY HIDDEN UNTIL UNLOCK) -->
 <div id="casino" class="hidden">
 <h1>🎰 Ultimate Virtual Casino <span id="adminBadge" class="hidden admin">ADMIN</span></h1>
 
@@ -117,7 +117,7 @@ input{
 <div class="panel hidden admin" id="adminPanel">
   <button onclick="adminAddMoney(100)">+100</button>
   <button onclick="adminAddMoneyAll(100)">+100 All</button>
-  <button onclick="adminSkip()">Skip</button>
+  <button onclick="adminSkip()">Skip Turn</button>
   <button onclick="adminReset()">Restart</button>
 </div>
 
@@ -125,25 +125,25 @@ input{
 </div>
 
 <script>
-/* 🔐 SECURITY */
-let PLAYER_CODE="2580",ADMIN_CODE="7419";
+/* 🔐 ACCESS CONTROL */
+const PLAYER_CODE="2580";
+const ADMIN_CODE="7419";
 let unlocked=false,isAdmin=false;
 
-/* 🔓 UNLOCK */
 function unlock(){
-  const c=code.value.trim();
+  const c=document.getElementById("code").value.trim();
   if(c!==PLAYER_CODE && c!==ADMIN_CODE){
     error.innerText="❌ Invalid code";
     return;
   }
   unlocked=true;
   isAdmin=c===ADMIN_CODE;
-  lock.classList.add("hidden");
+  lock.style.display="none";
   lobby.classList.remove("hidden");
 }
 
-/* 🚫 GLOBAL GUARD */
-function guard(){ if(!unlocked) return }
+/* 🚫 HARD GUARD */
+function guard(){ if(!unlocked) throw "Locked"; }
 
 /* 👥 PLAYERS */
 let players=[],turn=0,bet=0,spinning=false;
@@ -154,37 +154,51 @@ function addPlayer(){ guard();
   if(!n||players.length>=6)return;
   players.push({name:n,bal:100});
   playerName.value="";
-  renderLobby();
-}
-function renderLobby(){
   playerList.innerHTML=players.map(p=>`<p>${p.name}</p>`).join("");
 }
 function startGame(){ guard();
   if(players.length<1)return;
   lobby.classList.add("hidden");
   casino.classList.remove("hidden");
-  if(isAdmin){adminPanel.classList.remove("hidden");adminBadge.classList.remove("hidden")}
+  if(isAdmin){
+    adminPanel.classList.remove("hidden");
+    adminBadge.classList.remove("hidden");
+  }
   ui();
 }
 
-/* 🎮 GAME */
+/* 🎮 CORE */
 function ui(){
-  playersDiv.innerHTML=players.map((p,i)=>`<p ${i===turn?'class="gold"':''}>${p.name}: 💰${p.bal}</p>`).join("");
+  players.innerHTML="";
+  document.getElementById("players").innerHTML=
+    players.map((p,i)=>`<p ${i===turn?'class="gold"':''}>${p.name}: 💰${p.bal}</p>`).join("");
   betSpan.innerText=bet;
 }
 function addBet(v){ guard(); if(spinning||players[turn].bal<bet+v)return; bet+=v; ui(); }
 function clearBet(){ guard(); bet=0; ui(); }
-function canBet(){ return bet>0 && players[turn].bal>=bet }
+function canBet(){ return bet>0&&players[turn].bal>=bet }
 function endTurn(){
   if(players[turn].bal<=0){alert("Game Over");location.reload()}
-  bet=0; turn=(turn+1)%players.length; ui();
+  bet=0;turn=(turn+1)%players.length;ui();
 }
 function output(t){ outputDiv.innerText=t }
 
 /* 🎲 GAMES */
-function dice(){ guard(); if(!canBet())return; Math.random()>.5?players[turn].bal+=bet:players[turn].bal-=bet; output("🎲 Dice"); endTurn(); }
-function slots(){ guard(); if(!canBet())return; setTimeout(()=>{Math.random()>.85?players[turn].bal+=bet*10:players[turn].bal-=bet; output("🎰 Slots"); endTurn()},1000); }
-function blackjack(){ guard(); if(!canBet())return; let p=16+Math.random()*6,d=15+Math.random()*8; p>21||d<=21&&d>=p?players[turn].bal-=bet:players[turn].bal+=bet; output("🃏 Blackjack"); endTurn(); }
+function dice(){ guard(); if(!canBet())return;
+  Math.random()>.5?players[turn].bal+=bet:players[turn].bal-=bet;
+  output("🎲 Dice"); endTurn();
+}
+function slots(){ guard(); if(!canBet())return;
+  setTimeout(()=>{
+    Math.random()>.85?players[turn].bal+=bet*10:players[turn].bal-=bet;
+    output("🎰 Slots"); endTurn();
+  },1200);
+}
+function blackjack(){ guard(); if(!canBet())return;
+  let p=16+Math.random()*6,d=15+Math.random()*8;
+  p>21||d<=21&&d>=p?players[turn].bal-=bet:players[turn].bal+=bet;
+  output("🃏 Blackjack"); endTurn();
+}
 
 /* 🎡 ROULETTE */
 function toggleRoulette(){ guard(); roulettePanel.classList.toggle("hidden"); }
@@ -214,7 +228,6 @@ function adminSkip(){ guard(); if(isAdmin)endTurn() }
 function adminReset(){ guard(); if(isAdmin)location.reload() }
 
 /* DOM */
-const playersDiv=document.getElementById("players");
 const betSpan=document.getElementById("bet");
 const outputDiv=document.getElementById("output");
 

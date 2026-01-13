@@ -6,6 +6,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
+:root{
+  --gold:#d4af37;
+  --bg:#000;
+  --panel:#111;
+  --red:#8b0000;
+  --green:#006400;
+}
+*{box-sizing:border-box}
 body{
   margin:0;
   font-family:Segoe UI,Arial,sans-serif;
@@ -14,17 +22,9 @@ body{
   text-align:center;
 }
 .hidden{display:none}
-h1{margin:0;padding:16px;border-bottom:2px solid gold}
-.panel{
-  max-width:1000px;
-  margin:14px auto;
-  padding:16px;
-  background:#111;
-  border-radius:12px;
-  border:1px solid #333;
-}
+h1,h2,h3{margin:0;padding:10px}
 button{
-  padding:10px 14px;
+  padding:10px 16px;
   margin:4px;
   border-radius:8px;
   border:1px solid #444;
@@ -32,20 +32,362 @@ button{
   color:#fff;
   cursor:pointer;
 }
-button:hover{border-color:gold}
+button:hover{border-color:var(--gold)}
 button:disabled{opacity:.4;cursor:not-allowed}
 input{
   padding:10px;
   font-size:16px;
-  border-radius:6px;
-  border:1px solid #444;
   background:#000;
   color:#fff;
+  border-radius:6px;
+  border:1px solid #444;
 }
-.gold{color:gold}
-.red{background:#8b0000}
+.panel{
+  max-width:1100px;
+  margin:14px auto;
+  padding:16px;
+  background:var(--panel);
+  border-radius:12px;
+  border:1px solid #333;
+}
+.gold{color:var(--gold)}
+.red{background:var(--red)}
 .black{background:#000}
-.green{background:#006400}
-.admin{border:2px solid red;color:red;padding:4px 8px;border-radius:6px}
+.green{background:var(--green)}
+.admin{
+  border:2px solid red;
+  color:red;
+  padding:4px 10px;
+  border-radius:6px;
+}
 
-#players p{marg
+#lock,#lobby{
+  height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.box{
+  background:#111;
+  padding:30px;
+  border-radius:14px;
+  border:1px solid var(--gold);
+  max-width:420px;
+  width:100%;
+}
+#error{color:red;margin-top:10px}
+
+#players p{margin:4px;font-size:18px}
+#bet{font-size:22px;color:var(--gold)}
+#output{font-size:20px;margin-top:10px}
+
+#wheel{
+  width:220px;
+  height:220px;
+  margin:14px auto;
+  border-radius:50%;
+  border:10px solid var(--gold);
+  background:conic-gradient(
+    #006400 0deg 10deg,
+    #8b0000 10deg 190deg,
+    #000 190deg 360deg
+  );
+  transition:transform 3.2s cubic-bezier(.2,.8,.2,1);
+}
+
+#rouletteTable{
+  display:grid;
+  grid-template-columns:repeat(12,1fr);
+  gap:4px;
+  margin-top:14px;
+}
+.cell{
+  padding:10px;
+  border-radius:6px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+@media(max-width:800px){
+  #rouletteTable{grid-template-columns:repeat(6,1fr)}
+}
+</style>
+</head>
+
+<body>
+
+<!-- 🔐 ACCESS -->
+<div id="lock">
+  <div class="box">
+    <h2 class="gold">🔐 Casino Access</h2>
+    <input id="code" type="password" placeholder="Enter Code">
+    <br><br>
+    <button onclick="unlock()">ENTER</button>
+    <div id="error"></div>
+    <p class="gold">Player: 8733 | Admin: 0927</p>
+  </div>
+</div>
+
+<!-- 👥 LOBBY -->
+<div id="lobby" class="hidden">
+  <div class="box">
+    <h2 class="gold">👥 Player Lobby</h2>
+    <input id="playerName" placeholder="Player name">
+    <br><br>
+    <button onclick="addPlayer()">Add Player</button>
+    <div id="playerList"></div>
+    <br>
+    <button onclick="startGame()">🎰 Start Casino</button>
+  </div>
+</div>
+
+<!-- 🎰 CASINO -->
+<div id="casino" class="hidden">
+
+<h1>
+  🎰 Ultimate Virtual Casino
+  <span id="adminBadge" class="hidden admin">ADMIN MODE</span>
+</h1>
+
+<div class="panel">
+  <div id="players"></div>
+  <p>Current Bet: <span id="bet">0</span></p>
+  <button onclick="addBet(5)">5</button>
+  <button onclick="addBet(10)">10</button>
+  <button onclick="addBet(25)">25</button>
+  <button onclick="addBet(50)">50</button>
+  <button onclick="addBet(100)">100</button>
+  <button onclick="clearBet()">Clear</button>
+</div>
+
+<div class="panel">
+  <button onclick="dice()">🎲 Dice</button>
+  <button onclick="slots()">🎰 Slots</button>
+  <button onclick="blackjack()">🃏 Blackjack</button>
+  <button onclick="toggleRoulette()">🎡 Roulette</button>
+</div>
+
+<div class="panel hidden" id="roulettePanel">
+  <div id="wheel"></div>
+
+  <div>
+    <button class="red" onclick="betColor('red')">RED</button>
+    <button class="black" onclick="betColor('black')">BLACK</button>
+    <button onclick="betParity('odd')">ODD</button>
+    <button onclick="betParity('even')">EVEN</button>
+    <button onclick="betRange('low')">1–18</button>
+    <button onclick="betRange('high')">19–36</button>
+    <button class="green" onclick="betNumber(0)">0</button>
+  </div>
+
+  <div id="rouletteTable"></div>
+</div>
+
+<div class="panel hidden admin" id="adminPanel">
+  <h3>🛠️ Admin Controls</h3>
+  <button onclick="adminAddMoney(100)">+100 Player</button>
+  <button onclick="adminAddMoneyAll(100)">+100 All</button>
+  <button onclick="adminSkip()">Skip Turn</button>
+  <button onclick="adminReset()">Restart Game</button>
+</div>
+
+<div class="panel">
+  <div id="output"></div>
+</div>
+
+</div>
+
+<script>
+/* 🔐 ACCESS SYSTEM */
+const PLAYER_CODE="8733";
+const ADMIN_CODE="0927";
+let isAdmin=false,unlocked=false;
+
+function unlock(){
+  const c=document.getElementById("code").value.trim();
+  const e=document.getElementById("error");
+  e.innerText="";
+  if(c===PLAYER_CODE||c===ADMIN_CODE){
+    isAdmin=(c===ADMIN_CODE);
+    document.getElementById("lock").classList.add("hidden");
+    document.getElementById("lobby").classList.remove("hidden");
+  }else{
+    e.innerText="❌ Incorrect code";
+    document.getElementById("code").value="";
+  }
+}
+
+document.addEventListener("keydown",e=>{
+  if(!unlocked && e.key==="Enter") unlock();
+});
+
+/* 👥 LOBBY */
+let players=[];
+function addPlayer(){
+  const n=document.getElementById("playerName").value.trim();
+  if(!n||players.length>=6)return;
+  players.push({name:n,bal:100});
+  document.getElementById("playerName").value="";
+  renderLobby();
+}
+function removePlayer(i){players.splice(i,1);renderLobby();}
+function renderLobby(){
+  document.getElementById("playerList").innerHTML=
+    players.map((p,i)=>`<p>${p.name} <button onclick="removePlayer(${i})">❌</button></p>`).join("");
+}
+function startGame(){
+  if(players.length<1)return;
+  unlocked=true;
+  document.getElementById("lobby").classList.add("hidden");
+  document.getElementById("casino").classList.remove("hidden");
+  if(isAdmin){
+    adminPanel.classList.remove("hidden");
+    adminBadge.classList.remove("hidden");
+  }
+  ui();
+}
+
+/* 🎰 GAME CORE */
+let turn=0,bet=0,spinning=false;
+const redNums=[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+
+const playersDiv=document.getElementById("players");
+const betSpan=document.getElementById("bet");
+const outputDiv=document.getElementById("output");
+
+function ui(){
+  playersDiv.innerHTML=
+    players.map((p,i)=>`<p ${i===turn?'class="gold"':''}>
+      ${p.name}: 💰${p.bal}</p>`).join("");
+  betSpan.innerText=bet;
+}
+
+function addBet(v){if(spinning)return;bet+=v;ui();}
+function clearBet(){if(spinning)return;bet=0;ui();}
+function canBet(){return bet>0 && players[turn].bal>=bet}
+
+function win(x){players[turn].bal+=Math.floor(x*0.95);}
+function lose(x){players[turn].bal-=x;}
+
+function endTurn(){
+  if(players[turn].bal<=0){
+    alert(players[turn].name+" is bankrupt!");
+    location.reload();
+  }
+  bet=0;
+  turn=(turn+1)%players.length;
+  ui();
+}
+function output(t){outputDiv.innerText=t}
+
+/* 🎲 BASIC GAMES */
+function dice(){
+  if(!canBet())return;
+  Math.random()>0.5?win(bet):lose(bet);
+  output("🎲 Dice rolled");
+  endTurn();
+}
+function slots(){
+  if(!canBet())return;
+  Math.random()>0.85?win(bet*10):lose(bet);
+  output("🎰 Slot machine");
+  endTurn();
+}
+function blackjack(){
+  if(!canBet())return;
+  let p=16+Math.random()*6;
+  let d=15+Math.random()*8;
+  p<=21&&p>d?win(bet):lose(bet);
+  output("🃏 Blackjack");
+  endTurn();
+}
+
+/* 🎡 ROULETTE LOGIC CONTINUES IN PART 2 */
+/* 🎡 ROULETTE */
+const roulettePanel=document.getElementById("roulettePanel");
+const wheel=document.getElementById("wheel");
+
+function toggleRoulette(){
+  roulettePanel.classList.toggle("hidden");
+}
+
+function betNumber(n){spin({type:"number",value:n})}
+function betColor(c){spin({type:"color",value:c})}
+function betParity(p){spin({type:"parity",value:p})}
+function betRange(r){spin({type:"range",value:r})}
+
+function spin(betObj){
+  if(!canBet() || spinning) return;
+
+  spinning=true;
+  document.querySelectorAll("button").forEach(b=>b.disabled=true);
+
+  wheel.style.transform =
+    `rotate(${Math.random()*360 + 1080}deg)`;
+
+  setTimeout(()=>{
+    const n=Math.floor(Math.random()*37);
+    let winCond=false;
+    let multiplier=2;
+
+    if(betObj.type==="number"){
+      winCond = n === betObj.value;
+      multiplier = 14;
+    }
+    if(betObj.type==="color"){
+      if(betObj.value==="red") winCond = redNums.includes(n);
+      if(betObj.value==="black") winCond = n!==0 && !redNums.includes(n);
+    }
+    if(betObj.type==="parity" && n!==0){
+      winCond = betObj.value==="odd" ? n%2===1 : n%2===0;
+    }
+    if(betObj.type==="range"){
+      winCond = betObj.value==="low" ? (n>=1 && n<=18) : (n>=19 && n<=36);
+    }
+
+    winCond ? win(bet*multiplier) : lose(bet);
+    output("🎡 Roulette landed on " + n);
+
+    spinning=false;
+    document.querySelectorAll("button").forEach(b=>b.disabled=false);
+    endTurn();
+  },3200);
+}
+
+/* 🛠️ ADMIN CONTROLS */
+function adminAddMoney(x){
+  players[turn].bal += x;
+  ui();
+}
+function adminAddMoneyAll(x){
+  players.forEach(p=>p.bal += x);
+  ui();
+}
+function adminSkip(){
+  endTurn();
+}
+function adminReset(){
+  location.reload();
+}
+
+/* 🧱 BUILD ROULETTE TABLE */
+(function buildTable(){
+  const t=document.getElementById("rouletteTable");
+  for(let i=1;i<=36;i++){
+    const d=document.createElement("div");
+    d.className="cell "+(redNums.includes(i)?"red":"black");
+    d.innerText=i;
+    d.onclick=()=>betNumber(i);
+    t.appendChild(d);
+  }
+})();
+
+/* ⛔ SAFETY */
+window.onbeforeunload = () => "Game in progress";
+
+/* ✅ GAME READY */
+output("🎰 Welcome to the Ultimate Virtual Casino!");
+</script>
+
+</body>
+</html>

@@ -1,0 +1,23 @@
+body {
+  background: #121212;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+
+.menu button {
+  margin: 10px;
+  padding: 15px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+#players p {
+  margin: 5px;
+}
+
+#output {
+  margin-top: 20px;
+  font-size: 18px;
+  white-space: pre-line;
+}
